@@ -1,0 +1,256 @@
+@font-face {
+  font-family: 'aft-icons';
+  src:  url('fonts/aft-icons.eot?kiv2u2');
+  src:  url('fonts/aft-icons.eot?kiv2u2#iefix') format('embedded-opentype'),
+    url('fonts/aft-icons.ttf?kiv2u2') format('truetype'),
+    url('fonts/aft-icons.woff?kiv2u2') format('woff'),
+    url('fonts/aft-icons.svg?kiv2u2#aft-icons') format('svg');
+  font-weight: normal;
+  font-style: normal;
+  font-display: block;
+}
+.covernews-icon-search:before,
+.covernews-icon-angle-down:before,
+.covernews-icon-angle-up:before,
+.covernews-icon-angle-right:before,
+.covernews-icon-angle-left:before,
+.af-search-wrap .fa-search::before,
+.author-links .fa-user-circle,
+.author-links .fa-clock,
+.author-links .fa-comment,
+.author-links .fa-eye,
+.em-post-format .fa-video,
+.em-post-format .fa-images,
+.em-post-format .fa-camera,
+#scroll-up .fa-angle-up,
+.menu .fa-angle-up,
+.menu .fa-angle-down,
+.slick-arrow.fa-angle-up,
+.slick-arrow.fa-angle-down,
+.slick-arrow.fa-angle-right,
+.slick-arrow.fa-angle-left,
+.covernews-widget.fa-angle-up,
+.covernews-widget.fa-angle-down,
+.covernews-widget.fa-angle-right,
+.covernews-widget.fa-angle-left,
+[class^="aft-icon-"], [class*=" aft-icon-"] {
+  font-family: 'aft-icons' !important;
+  font-style: normal;
+  font-weight: normal;
+  font-variant: normal;
+  text-transform: none;
+  line-height: 1;
+  -webkit-font-smoothing: antialiased;
+}
+
+.aft-icon-tiktok:before {
+  content: "\e900";
+}
+.aft-icon-messenger:before {
+  content: "\e901";
+}
+.aft-icon-github:before {
+  content: "\e902";
+}
+.author-links .fa-user-circle::before,
+.aft-icon-circle-user-regular:before {
+  content: "\e903";
+}
+.author-links .fa-clock::before,
+.aft-icon-clock-regular:before {
+  content: "\e904";
+}
+.author-links .fa-eye::before,
+.aft-icon-eye-regular:before {
+  content: "\e905";
+}
+.aft-icon-magnifying-glass-solid:before {
+  content: "\e906";
+}
+.em-post-format .fa-images::before,
+.aft-icon-images-regular:before {
+  content: "\e907";
+}
+.author-links .fa-comment::before,
+.aft-icon-comment-regular:before {
+  content: "\e908";
+}
+.em-post-format .fa-camera::before,
+.aft-icon-camera:before {
+  content: "\f030";
+}
+.em-post-format .fa-video::before,
+.aft-icon-video-camera:before {
+  content: "\f03d";
+}
+.aft-icon-shopping-cart:before {
+  content: "\f07a";
+}
+.aft-icon-twitter:before {
+  content: "\f099";
+}
+.aft-icon-facebook:before {
+  content: "\f09a";
+}
+.aft-icon-pinterest:before {
+  content: "\f0d2";
+}
+.aft-icon-google-plus:before {
+  content: "\f0d5";
+}
+.aft-icon-linkedin:before {
+  content: "\f0e1";
+}
+
+body.rtl .sub-menu .menu-item-has-children a .covernews-icon-angle-down:before,
+.slick-arrow.fa-angle-left::before,
+.covernews-widget.fa-angle-left::before,
+.covernews-icon-angle-left:before,
+.aft-icon-angle-left:before {
+  content: "\f104";
+}
+
+.sub-menu .menu-item-has-children a .covernews-icon-angle-down:before,
+.slick-arrow.fa-angle-right::before,
+.covernews-widget.fa-angle-right::before,
+.covernews-icon-angle-right:before,
+.aft-icon-angle-right:before {
+  content: "\f105";
+}
+.menu .fa-angle-up::before,
+#scroll-up .fa-angle-up::before,
+.slick-arrow.fa-angle-up::before,
+.covernews-widget.fa-angle-up::before,
+.covernews-icon-angle-up:before,
+.aft-icon-angle-up:before {
+  content: "\f106";
+}
+.menu .fa-angle-down::before,
+.slick-arrow.fa-angle-down::before,
+.covernews-widget.fa-angle-down::before,
+.covernews-icon-angle-down:before,
+.aft-icon-angle-down:before {
+  content: "\f107";
+}
+.aft-icon-youtube-play:before {
+  content: "\f16a";
+}
+.aft-icon-stack-overflow:before {
+  content: "\f16c";
+}
+.aft-icon-instagram:before {
+  content: "\f16d";
+}
+.aft-icon-tumblr:before {
+  content: "\f173";
+}
+.aft-icon-dribbble:before {
+  content: "\f17d";
+}
+.aft-icon-vk:before {
+  content: "\f189";
+}
+.aft-icon-weibo:before {
+  content: "\f18a";
+}
+.aft-icon-slack:before {
+  content: "\f198";
+}
+.aft-icon-wordpress:before {
+  content: "\f19a";
+}
+.aft-icon-behance:before {
+  content: "\f1b4";
+}
+.aft-icon-spotify:before {
+  content: "\f1bc";
+}
+.aft-icon-wechat:before {
+  content: "\f1d7";
+}
+.aft-icon-whatsapp:before {
+  content: "\f232";
+}
+.aft-icon-vimeo:before {
+  content: "\f27d";
+}
+.aft-icon-reddit-alien:before {
+  content: "\f281";
+}
+.aft-icon-telegram:before {
+  content: "\f2c6";
+}
+.aft-icon-threads:before {
+  content: "\e916";
+}
+.aft-icon-clock-solid:before {
+  content: "\e909";
+}
+.aft-icon-twitch:before {
+  content: "\e90b";
+}
+.aft-icon-viber:before {
+  content: "\e90c";
+}
+.aft-icon-yahoo:before {
+  content: "\e90d";
+}
+.aft-icon-bolt-lightning-solid:before {
+  content: "\e90e";
+}
+.aft-icon-hashtag-solid:before {
+  content: "\e90f";
+}
+.aft-icon-bell-solid:before {
+  content: "\e910";
+}
+.aft-icon-play-solid:before {
+  content: "\e911";
+}
+.aft-icon-right-to-bracket-solid:before {
+  content: "\e912";
+}
+.aft-icon-user-solid:before {
+  content: "\e913";
+}
+.covernews-icon-search:before,
+.af-search-wrap .fa-search::before,
+.aft-icon-search:before {
+  content: "\f002";
+}
+.aft-icon-chevron-left:before {
+  content: "\f053";
+}
+.aft-icon-chevron-right:before {
+  content: "\f054";
+}
+.aft-icon-chevron-up:before {
+  content: "\f077";
+}
+.aft-icon-chevron-down:before {
+  content: "\f078";
+}
+.aft-icon-bolt:before {
+  content: "\f0e7";
+}
+.aft-icon-soundcloud:before {
+  content: "\f1be";
+}
+.aft-icon-share-alt:before {
+  content: "\f1e0";
+}
+.aft-icon-snapchat-square:before {
+  content: "\f2ad";
+}
+.aft-icon-quora:before {
+  content: "\f2c4";
+}
+.aft-icon-telegram1:before {
+  content: "\f2c7";
+}
+.aft-icon-angle-right-svgrepo-com:before {
+  content: "\e914";
+}
+.aft-icon-angle-left-svgrepo-com:before {
+  content: "\e915";
+}

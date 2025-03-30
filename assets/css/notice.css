@@ -1,0 +1,62 @@
+div.theme-review-notice,
+div.covernews-notice {
+  position: relative;
+  padding: 10px 50px 10px 10px;
+}
+
+.covernews-notice .links {
+  padding-bottom: 10px;
+}
+
+.theme-review-notice .links {
+  margin: 10px 0;
+}
+
+.theme-review-notice .links a {
+  margin-left: 10px;
+}
+
+.covernews-notice .links a .dashicons,
+.theme-review-notice .links a .dashicons {
+  line-height: 1.6;
+  font-size: 18px;
+}
+
+.theme-review-notice .links a.button-primary {
+  margin-left: 0;
+}
+
+a.covernews-notice-dismiss {
+  text-decoration: none;
+}
+
+.covernews-notice a{
+  color: #4343f0;
+}
+
+.covernews-notice a.button{
+  border-color: #4343f0;
+  color: #4343f0;
+}
+
+.covernews-notice a.button-normal{
+  border: none;
+}
+
+.covernews-notice a.button-primary{
+  background-color: #4343f0;
+  color: #ffffff;
+}
+
+
+.aft-notice-wrapper .button.installing:before, 
+.aft-notice-wrapper .button.updating-message:before, 
+.aft-notice-wrapper .import-php .updating-message:before, 
+.aft-notice-wrapper .update-message p:before, 
+.aft-notice-wrapper .updating-message p:before{
+color: #ffffff;
+}
+
+#aft-upgrade-menu-item{
+  color:#71d609;
+}
