@@ -159,8 +159,39 @@ export async function pedirAcceso(_previo: Respuesta, datos: FormData): Promise<
     },
   });
 
-  if (error) return { error: "No se pudo enviar el mail. Revisá la dirección." };
+  if (error) return { error: porQueNoSalioElMail(error) };
   return { ok: `Te mandamos un link a ${email}. Abrilo desde este dispositivo.` };
+}
+
+/**
+ * Traduce el fallo de envío a algo accionable.
+ *
+ * El correo interno de Supabase existe para probar, no para usar: manda unos
+ * pocos mensajes por hora. Con quince jugadores dándose de alta la misma
+ * tarde, el límite se toca enseguida, y un "revisá la dirección" manda a
+ * buscar el problema al lado equivocado.
+ */
+function porQueNoSalioElMail(error: { message?: string; code?: string }): string {
+  const codigo = error.code ?? "";
+  const texto = (error.message ?? "").toLowerCase();
+
+  if (codigo === "over_email_send_rate_limit" || texto.includes("rate limit")) {
+    return (
+      "Supabase no deja mandar más mails por ahora: su servicio interno tiene un " +
+      "límite de pocos envíos por hora. Esperá un rato, o configurá un proveedor " +
+      "de correo propio en Authentication → SMTP Settings."
+    );
+  }
+  if (codigo === "email_address_invalid" || texto.includes("invalid")) {
+    return "Esa dirección de correo no es válida.";
+  }
+  if (codigo === "signup_disabled" || texto.includes("signups not allowed")) {
+    return "Supabase tiene las altas deshabilitadas. Habilitalas en Authentication → Providers → Email.";
+  }
+  if (texto.includes("smtp") || texto.includes("sending")) {
+    return `El servidor de correo rechazó el envío: ${error.message}`;
+  }
+  return `No se pudo enviar el mail: ${error.message ?? "sin detalle"}`;
 }
 
 export async function salir() {
