@@ -1,0 +1,260 @@
+/* Sistema visual de "¿A qué hora arranca?" — cuadrícula de plano, cajas de
+   proceso y monoespaciada para todo lo que sea dato. Los dos temas están
+   diseñados por separado: en oscuro los acentos se aclaran y el texto sobre
+   ellos se oscurece, así el azul y el verde siguen siendo legibles. */
+
+:root {
+  --ink: #0a0e17;
+  --paper: #e7eaf2;
+  --sur: #fff;
+  --borde: #0a0e17;
+  --line: #c4cce0;
+  --grid: rgba(10, 14, 23, 0.055);
+  --mute: #5f6980;
+  --azul: #1b3bd8;
+  --azulb: #dce2f9;
+  --azult: #fff;
+  --nar: #ce4610;
+  --narb: #f7e1d5;
+  --nart: #fff;
+  --ver: #0b8f58;
+  --verb: #d5efe1;
+  --vert: #fff;
+  --inv: #0a0e17;
+  --invt: #fff;
+
+  --mono: "JetBrains Mono", ui-monospace, Menlo, monospace;
+  --disp: "Bricolage Grotesque", "Helvetica Neue", Arial, sans-serif;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-tema="claro"]) {
+    --ink: #e9ecf4;
+    --paper: #0b0f16;
+    --sur: #141a25;
+    --borde: #41506b;
+    --line: #2c3648;
+    --grid: rgba(255, 255, 255, 0.05);
+    --mute: #8b95ab;
+    --azul: #8aa0ff;
+    --azulb: #1a2340;
+    --azult: #0b0f16;
+    --nar: #f2905c;
+    --narb: #2e1d14;
+    --nart: #0b0f16;
+    --ver: #43c08c;
+    --verb: #11291f;
+    --vert: #0b0f16;
+    --inv: #e9ecf4;
+    --invt: #0b0f16;
+  }
+}
+
+:root[data-tema="oscuro"] {
+  --ink: #e9ecf4;
+  --paper: #0b0f16;
+  --sur: #141a25;
+  --borde: #41506b;
+  --line: #2c3648;
+  --grid: rgba(255, 255, 255, 0.05);
+  --mute: #8b95ab;
+  --azul: #8aa0ff;
+  --azulb: #1a2340;
+  --azult: #0b0f16;
+  --nar: #f2905c;
+  --narb: #2e1d14;
+  --nart: #0b0f16;
+  --ver: #43c08c;
+  --verb: #11291f;
+  --vert: #0b0f16;
+  --inv: #e9ecf4;
+  --invt: #0b0f16;
+}
+
+* { box-sizing: border-box; }
+
+html, body { height: 100%; }
+
+body {
+  margin: 0;
+  color: var(--ink);
+  font-family: var(--mono);
+  background-color: var(--paper);
+  background-image:
+    linear-gradient(var(--grid) 1px, transparent 1px),
+    linear-gradient(90deg, var(--grid) 1px, transparent 1px);
+  background-size: 26px 26px;
+  -webkit-font-smoothing: antialiased;
+}
+
+a { color: var(--azul); text-decoration: none; }
+a:hover { color: var(--ink); }
+
+button, input, select { font: inherit; color: inherit; }
+button { border: 0; background: none; cursor: pointer; text-align: left; }
+:focus-visible { outline: 2px solid var(--azul); outline-offset: 2px; }
+
+/* ------------------------------------------------------------- estructura */
+
+.app {
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  max-width: 640px;
+  margin: 0 auto;
+}
+
+.top { padding: 26px 18px 10px; display: flex; flex-direction: column; gap: 9px; }
+
+.brandrow {
+  display: flex; justify-content: space-between; align-items: baseline;
+  font-size: 9.5px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--mute);
+}
+
+.fecharow { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
+.fecha { font-family: var(--disp); font-size: 21px; font-weight: 700; letter-spacing: -0.02em; }
+
+.temabtn {
+  width: 44px; height: 44px; flex: 0 0 auto; border: 1px solid var(--line);
+  display: flex; align-items: center; justify-content: center;
+  color: var(--mute); background: var(--sur);
+}
+
+.cuerpo { flex: 1; padding: 11px 18px 18px; display: flex; flex-direction: column; gap: 11px; }
+
+/* -------------------------------------------------------- máquina de estados */
+
+.maq {
+  display: flex; flex-direction: column; gap: 6px;
+  padding: 9px 11px; border: 1px solid var(--line); background: var(--sur);
+}
+.maqcab {
+  display: flex; justify-content: space-between;
+  font-size: 9px; letter-spacing: 0.13em; text-transform: uppercase; color: var(--mute);
+}
+.maqcab b { color: var(--ink); letter-spacing: 0.1em; }
+.nodos { display: flex; align-items: center; }
+.nodo { width: 11px; height: 11px; border: 1.5px solid var(--line); background: var(--sur); flex: 0 0 auto; }
+.nodo.hecho { background: var(--line); border-color: var(--line); }
+.nodo.act { background: var(--azul); border-color: var(--azul); box-shadow: 0 0 0 3px var(--azulb); }
+.arco { flex: 1; height: 1px; background: var(--line); }
+.maqpie { display: flex; justify-content: space-between; font-size: 8.5px; letter-spacing: 0.1em; color: var(--mute); }
+
+/* ------------------------------------------------------------------ cajas */
+
+.caja { background: var(--sur); border: 1px solid var(--borde); display: flex; flex-direction: column; }
+.caja.suave { border-color: var(--line); }
+.cab {
+  display: flex; justify-content: space-between; align-items: center; gap: 8px;
+  padding: 7px 11px; border-bottom: 1px solid var(--borde);
+  font-size: 9.5px; letter-spacing: 0.13em; text-transform: uppercase;
+}
+.caja.suave .cab { border-bottom-color: var(--line); color: var(--mute); }
+.cab.inv { background: var(--inv); color: var(--invt); border-bottom: 0; }
+.cab.azul { background: var(--azul); color: var(--azult); border-bottom: 0; }
+.cab.nar { background: var(--nar); color: var(--nart); border-bottom: 0; }
+.cab.ver { background: var(--ver); color: var(--vert); border-bottom: 0; }
+.interior { padding: 14px 13px; display: flex; flex-direction: column; gap: 11px; }
+.interior.fila { flex-direction: row; align-items: center; justify-content: space-between; padding: 13px; }
+
+/* ------------------------------------------------------------------ tipos */
+
+.hora {
+  font-family: var(--mono); font-variant-numeric: tabular-nums;
+  font-weight: 700; letter-spacing: -0.04em; line-height: 0.94;
+}
+.h68 { font-size: clamp(52px, 17vw, 68px); }
+.h46 { font-size: 46px; }
+.h34 { font-size: 34px; }
+.h22 { font-size: 22px; }
+
+.k { font-size: 9.5px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--mute); }
+.p { font-family: var(--disp); font-size: 13.5px; line-height: 1.45; color: var(--mute); margin: 0; }
+.p b { color: var(--ink); font-weight: 600; }
+.error { color: var(--nar); }
+
+/* ---------------------------------------------------------------- botones */
+
+.btn {
+  min-height: 52px; display: flex; align-items: center; justify-content: center; gap: 9px;
+  font-size: 12.5px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase;
+  border: 1px solid var(--borde); width: 100%;
+}
+.btn.pri { background: var(--inv); color: var(--invt); }
+.btn.azul { background: var(--azul); border-color: var(--azul); color: var(--azult); }
+.btn.ver { background: var(--ver); border-color: var(--ver); color: var(--vert); }
+.btn.ghost { background: transparent; border-color: var(--line); }
+.btn[disabled] { opacity: 0.5; cursor: not-allowed; }
+.btn.chico { min-height: 44px; padding: 0 16px; width: auto; }
+
+/* ----------------------------------------------------------------- filas */
+
+.fila-lista { display: flex; align-items: center; gap: 10px; padding: 9px 0; border-bottom: 1px dotted var(--line); }
+.fila-lista:last-child { border-bottom: 0; }
+.ini {
+  width: 26px; height: 26px; border: 1px solid var(--line);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 11px; font-weight: 700; flex: 0 0 auto; color: var(--mute);
+}
+.ini.yo { background: var(--inv); border-color: var(--inv); color: var(--invt); }
+.nom {
+  font-family: var(--disp); font-size: 14px; font-weight: 600; flex: 1; min-width: 0;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.num { font-variant-numeric: tabular-nums; font-size: 13px; font-weight: 700; }
+.tag {
+  font-size: 8.5px; font-weight: 700; letter-spacing: 0.1em; padding: 3px 6px;
+  text-transform: uppercase; background: var(--verb); color: var(--ver);
+}
+
+/* ------------------------------------------------------------- navegación */
+
+.nav {
+  display: flex; background: var(--sur); border-top: 1px solid var(--borde);
+  padding: 8px 6px calc(8px + env(safe-area-inset-bottom)); position: sticky; bottom: 0;
+}
+.navi {
+  flex: 1; min-height: 48px; display: flex; flex-direction: column;
+  align-items: center; justify-content: center; gap: 4px;
+  font-size: 9px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--mute);
+}
+.navi.on { color: var(--azul); }
+
+/* --------------------------------------------------------------- entradas */
+
+.campo {
+  width: 100%; min-height: 52px; padding: 0 14px;
+  background: var(--sur); border: 1px solid var(--line); color: var(--ink);
+  font-family: var(--mono);
+}
+
+.pastillas { display: flex; gap: 6px; }
+.pastilla {
+  flex: 1; min-height: 44px; display: flex; align-items: center; justify-content: center;
+  font-size: 12px; font-weight: 700; font-variant-numeric: tabular-nums;
+  border: 1px solid var(--line); color: var(--mute); background: transparent;
+}
+.pastilla.on { border-color: var(--azul); background: var(--azul); color: var(--azult); }
+
+.pasos { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.paso {
+  width: 50px; height: 50px; border: 1px solid var(--line);
+  display: flex; align-items: center; justify-content: center;
+}
+
+.tabs { display: flex; border: 1px solid var(--borde); }
+.tab {
+  flex: 1; min-height: 48px; display: flex; align-items: center; justify-content: center;
+  font-size: 11px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase;
+  color: var(--mute);
+}
+.tab.on { background: var(--inv); color: var(--invt); }
+
+.aviso { border-left: 3px solid var(--azul); padding-left: 11px; display: flex; flex-direction: column; gap: 5px; }
+.aviso.mal { border-left-color: var(--nar); }
+.cita { font-family: var(--disp); font-style: italic; color: var(--ink); font-size: 13.5px; margin: 0; }
+
+@media (min-width: 720px) {
+  .app { max-width: 760px; }
+  .top { padding-top: 42px; }
+}
