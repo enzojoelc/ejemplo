@@ -1,12 +1,7 @@
 import Link from "next/link";
 import { BotonTema } from "@/componentes/Tema.tsx";
-import { RescateSesion } from "@/componentes/RescateSesion.tsx";
 
-/**
- * Cualquier dirección que la app no conoce cae acá. Importa más de lo que
- * parece: es donde aterriza un link del correo mal configurado, así que además
- * de explicar, intenta rescatar la sesión si el link la traía.
- */
+/** Cualquier dirección que la app no conoce cae acá. */
 export default function NoEncontrado() {
   return (
     <div className="app">
@@ -22,17 +17,14 @@ export default function NoEncontrado() {
       </header>
 
       <main className="cuerpo">
-        <RescateSesion />
-
         <div className="caja suave">
           <div className="cab">
             <span>Qué pudo pasar</span>
           </div>
           <div className="interior">
             <p className="p">
-              Si llegaste desde el link de un correo, es probable que la dirección de retorno esté mal
-              configurada en Supabase: la que figura en <b>Authentication → URL Configuration</b> tiene
-              que ser la de esta app, con <b>/auth/callback</b> al final.
+              La dirección que abriste no existe en la app. Puede ser un enlace viejo o un error de
+              tipeo.
             </p>
             <Link className="btn pri" href="/entrar">
               Volver a entrar

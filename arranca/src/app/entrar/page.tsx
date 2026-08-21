@@ -3,7 +3,6 @@ import { redirect } from "next/navigation";
 import { jugadorActual } from "@/lib/sesion.ts";
 import { Acceso, PedirCodigo } from "@/componentes/FormularioAcceso.tsx";
 import { BotonTema } from "@/componentes/Tema.tsx";
-import { RescateSesion } from "@/componentes/RescateSesion.tsx";
 
 export const dynamic = "force-dynamic";
 
@@ -31,8 +30,6 @@ export default async function Entrar({
       </header>
 
       <main className="cuerpo">
-        <RescateSesion />
-
         {fallo ? (
           <div className="aviso mal">
             <span className="k">No pudimos abrir la sesión</span>
@@ -62,7 +59,7 @@ export default async function Entrar({
               La clase es lunes y jueves de 18:20 a 20:35, y nunca arranca 18:20. El juego consiste en
               adivinar cuándo arranca de verdad.
             </p>
-            {invitado ? <Acceso conGoogle={process.env.GOOGLE_HABILITADO === "1"} /> : <PedirCodigo />}
+            {invitado ? <Acceso /> : <PedirCodigo />}
           </div>
         </div>
 
@@ -80,12 +77,6 @@ function explicar(fallo: string): string {
   switch (fallo) {
     case "sin_invitacion":
       return "Tu cuenta de Google anduvo, pero no tenés invitación. Cargá el código y volvé a entrar.";
-    case "google_no_configurado":
-      return "Falta habilitar el acceso con Google en Supabase: Authentication → Providers → Google.";
-    case "google":
-      return "Google canceló el acceso. Probá de nuevo.";
-    case "sesion":
-      return "No se pudo abrir la sesión con lo que devolvió Google.";
     case "alta":
       return "Entraste, pero no se pudo crear tu ficha de jugador.";
     default:

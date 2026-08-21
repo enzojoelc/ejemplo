@@ -72,20 +72,22 @@ npm run dev
 Todo entra en las capas gratuitas: son quince jugadores y 54 rondas al año.
 
 **1. Supabase.** Creá un proyecto y corré `supabase/schema.sql` en el SQL Editor.
-En *Authentication → Providers → Email*, **apagá «Confirm email»**. Es el único
-ajuste de acceso que hace falta: con eso la cuenta se crea y queda lista en el
-acto, sin mandar ningún correo. El plan gratuito pausa proyectos con 7 días de
-inactividad: jugando lunes y jueves nunca se pausa.
+En **Authentication → Providers → Email** hacen falta tres cosas, todas en esa
+misma pantalla:
 
-Se entra con correo y contraseña a propósito. El correo de Supabase manda unos
-pocos mensajes por hora y montar uno propio exige verificar un dominio para
-poder escribirle a quince personas; el acceso con Google evita las dos cosas
-pero pide crear credenciales en Google Cloud. La contraseña no pide nada de eso.
+1. el proveedor **Email habilitado**;
+2. **«Allow new users to sign up» encendido**;
+3. **«Confirm email» apagado**.
 
-Si más adelante querés Google igual, creá el cliente OAuth con el URI de
-redirección `https://TU-PROYECTO.supabase.co/auth/v1/callback`, pegá el ID y el
-secreto en Supabase y agregá `GOOGLE_HABILITADO=1` en Vercel: el botón aparece
-solo.
+Con eso la cuenta se crea y queda lista en el acto, sin enviar ningún correo.
+El plan gratuito pausa proyectos con 7 días de inactividad: jugando lunes y
+jueves nunca se pausa.
+
+Se entra con correo y contraseña a propósito: es el único método que no
+necesita ninguna pieza externa. El correo interno de Supabase manda unos pocos
+mensajes por hora y montar uno propio exige verificar un dominio para poder
+escribirle a quince personas; el acceso con Google evita las dos cosas, pero
+pide crear credenciales en Google Cloud.
 
 **2. Vercel.** Importá este repositorio, con `arranca` como directorio raíz.
 Cargá las variables de `.env.example`:

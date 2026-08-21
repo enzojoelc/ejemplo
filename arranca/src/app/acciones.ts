@@ -3,7 +3,6 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { cookies } from "next/headers";
-import type { Route } from "next";
 import { supabaseDelJugador, supabaseDelServidor } from "@/lib/supabase.ts";
 import { exigirJugador } from "@/lib/sesion.ts";
 import { ahora, hoy } from "@/lib/ahora.ts";
@@ -227,23 +226,6 @@ export async function iniciarSesion(_previo: Respuesta, datos: FormData): Promis
   redirect("/");
 }
 
-/** Manda a Google. Sólo se ofrece si está configurado. */
-export async function entrarConGoogle(): Promise<void> {
-  const supabase = await supabaseDelJugador();
-  const { data, error } = await supabase.auth.signInWithOAuth({
-    provider: "google",
-    options: {
-      redirectTo: `${await urlDelSitio()}/auth/callback`,
-      queryParams: { prompt: "select_account" },
-    },
-  });
-
-  if (error || !data.url) redirect("/entrar?fallo=google_no_configurado");
-
-  // El tipado de rutas cubre las internas; ésta es la de Google, que es externa.
-  redirect(data.url as Route);
-}
-
 async function tieneInvitacion(): Promise<boolean> {
   const galleta = await cookies();
   return Boolean(
@@ -269,6 +251,18 @@ function traducir(error: { message?: string; code?: string }): string {
     return (
       "Supabase pide confirmar el correo. Apagá «Confirm email» en " +
       "Authentication → Providers → Email."
+    );
+  }
+  if (
+    codigo === "signup_disabled" ||
+    codigo === "email_provider_disabled" ||
+    texto.includes("signups are disabled") ||
+    texto.includes("signups not allowed") ||
+    texto.includes("logins are disabled")
+  ) {
+    return (
+      "Supabase tiene el acceso por correo apagado. En Authentication → Sign In / Providers → " +
+      "Email hacen falta tres cosas: proveedor habilitado, altas permitidas y «Confirm email» apagado."
     );
   }
   if (codigo === "invalid_credentials" || texto.includes("invalid login")) {
