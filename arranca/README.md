@@ -72,25 +72,20 @@ npm run dev
 Todo entra en las capas gratuitas: son quince jugadores y 54 rondas al año.
 
 **1. Supabase.** Creá un proyecto y corré `supabase/schema.sql` en el SQL Editor.
-En *Authentication → Providers* habilitá **Google** y pegá el ID y el secreto
-del cliente OAuth (ver abajo). En *URL Configuration* poné la URL de la app
-como Site URL y agregá `https://TU-APP.vercel.app/auth/callback` a las Redirect
-URLs. El plan gratuito pausa proyectos con 7 días de inactividad: jugando lunes
-y jueves nunca se pausa.
+En *Authentication → Providers → Email*, **apagá «Confirm email»**. Es el único
+ajuste de acceso que hace falta: con eso la cuenta se crea y queda lista en el
+acto, sin mandar ningún correo. El plan gratuito pausa proyectos con 7 días de
+inactividad: jugando lunes y jueves nunca se pausa.
 
-**1b. Google.** En console.cloud.google.com creá un proyecto, configurá la
-pantalla de consentimiento (externa, con tu correo de contacto) y creá unas
-credenciales de tipo *ID de cliente de OAuth → Aplicación web*. El único dato
-fino es el **URI de redireccionamiento autorizado**, que es el de Supabase y no
-el de la app:
+Se entra con correo y contraseña a propósito. El correo de Supabase manda unos
+pocos mensajes por hora y montar uno propio exige verificar un dominio para
+poder escribirle a quince personas; el acceso con Google evita las dos cosas
+pero pide crear credenciales en Google Cloud. La contraseña no pide nada de eso.
 
-```
-https://TU-PROYECTO.supabase.co/auth/v1/callback
-```
-
-Se entra con Google a propósito: sin correos no hay links que venzan, ni
-límites de envío por hora, ni un dominio propio que verificar para poder
-mandarle un mail a quince personas.
+Si más adelante querés Google igual, creá el cliente OAuth con el URI de
+redirección `https://TU-PROYECTO.supabase.co/auth/v1/callback`, pegá el ID y el
+secreto en Supabase y agregá `GOOGLE_HABILITADO=1` en Vercel: el botón aparece
+solo.
 
 **2. Vercel.** Importá este repositorio, con `arranca` como directorio raíz.
 Cargá las variables de `.env.example`:

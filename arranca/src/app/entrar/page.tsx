@@ -1,7 +1,7 @@
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { jugadorActual } from "@/lib/sesion.ts";
-import { FormularioAcceso } from "@/componentes/FormularioAcceso.tsx";
+import { Acceso, PedirCodigo } from "@/componentes/FormularioAcceso.tsx";
 import { BotonTema } from "@/componentes/Tema.tsx";
 import { RescateSesion } from "@/componentes/RescateSesion.tsx";
 
@@ -62,14 +62,14 @@ export default async function Entrar({
               La clase es lunes y jueves de 18:20 a 20:35, y nunca arranca 18:20. El juego consiste en
               adivinar cuándo arranca de verdad.
             </p>
-            <FormularioAcceso invitado={invitado} />
+            {invitado ? <Acceso conGoogle={process.env.GOOGLE_HABILITADO === "1"} /> : <PedirCodigo />}
           </div>
         </div>
 
         <p className="p" style={{ fontSize: 12 }}>
           {invitado
-            ? "Sin contraseñas y sin correos: entrás con tu cuenta de Google."
-            : "Hace falta el código que circula entre los que cursan. Después entrás con Google, sin contraseñas."}
+            ? "No se envía ningún correo: la cuenta se crea y queda lista en el momento."
+            : "Hace falta el código que circula entre los que cursan."}
         </p>
       </main>
     </div>

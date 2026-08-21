@@ -1,7 +1,13 @@
 "use client";
 
-import { useActionState } from "react";
-import { entrarConGoogle, validarInvitacion, type Respuesta } from "@/app/acciones.ts";
+import { useActionState, useState } from "react";
+import {
+  entrarConGoogle,
+  iniciarSesion,
+  registrarse,
+  validarInvitacion,
+  type Respuesta,
+} from "@/app/acciones.ts";
 
 const GOOGLE = (
   <svg width="18" height="18" viewBox="0 0 18 18" aria-hidden="true">
@@ -12,20 +18,8 @@ const GOOGLE = (
   </svg>
 );
 
-/** Con invitación validada, entrar es un solo toque. Sin ella, primero el código. */
-export function FormularioAcceso({ invitado }: { invitado: boolean }) {
+export function PedirCodigo() {
   const [estado, enviar, enviando] = useActionState<Respuesta, FormData>(validarInvitacion, {});
-
-  if (invitado) {
-    return (
-      <form action={entrarConGoogle} style={{ display: "flex", flexDirection: "column", gap: 11 }}>
-        <button className="btn pri">{GOOGLE} Entrar con Google</button>
-        <p className="p" style={{ fontSize: 12 }}>
-          Tu nombre en la tabla sale de tu cuenta de Google.
-        </p>
-      </form>
-    );
-  }
 
   return (
     <form action={enviar} style={{ display: "flex", flexDirection: "column", gap: 11 }}>
@@ -45,5 +39,85 @@ export function FormularioAcceso({ invitado }: { invitado: boolean }) {
       </button>
       {estado.error ? <p className="p error">{estado.error}</p> : null}
     </form>
+  );
+}
+
+/** Con la invitación validada: entrar si ya jugás, o crear la cuenta la primera vez. */
+export function Acceso({ conGoogle }: { conGoogle: boolean }) {
+  const [nuevo, setNuevo] = useState(false);
+  const [entrando, accionEntrar, ocupadoEntrar] = useActionState<Respuesta, FormData>(
+    iniciarSesion,
+    {},
+  );
+  const [creando, accionCrear, ocupadoCrear] = useActionState<Respuesta, FormData>(registrarse, {});
+
+  const estado = nuevo ? creando : entrando;
+  const ocupado = nuevo ? ocupadoCrear : ocupadoEntrar;
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 11 }}>
+      <div className="tabs">
+        <button type="button" className={`tab ${nuevo ? "" : "on"}`} onClick={() => setNuevo(false)}>
+          Ya juego
+        </button>
+        <button type="button" className={`tab ${nuevo ? "on" : ""}`} onClick={() => setNuevo(true)}>
+          Primera vez
+        </button>
+      </div>
+
+      <form
+        key={nuevo ? "alta" : "ingreso"}
+        action={nuevo ? accionCrear : accionEntrar}
+        style={{ display: "flex", flexDirection: "column", gap: 11 }}
+      >
+        {nuevo ? (
+          <>
+            <label className="k" htmlFor="nombre">
+              Cómo aparecés en la tabla
+            </label>
+            <input className="campo" id="nombre" name="nombre" required maxLength={24} placeholder="Enzo" />
+          </>
+        ) : null}
+
+        <label className="k" htmlFor="email">
+          Tu correo
+        </label>
+        <input
+          className="campo"
+          id="email"
+          name="email"
+          type="email"
+          required
+          autoComplete="email"
+          placeholder="vos@mail.com"
+        />
+
+        <label className="k" htmlFor="clave">
+          Contraseña
+        </label>
+        <input
+          className="campo"
+          id="clave"
+          name="clave"
+          type="password"
+          required
+          minLength={6}
+          autoComplete={nuevo ? "new-password" : "current-password"}
+          placeholder={nuevo ? "al menos 6 caracteres" : ""}
+        />
+
+        <button className="btn pri" disabled={ocupado}>
+          {ocupado ? "…" : nuevo ? "Crear mi cuenta" : "Entrar"}
+        </button>
+
+        {estado.error ? <p className="p error">{estado.error}</p> : null}
+      </form>
+
+      {conGoogle ? (
+        <form action={entrarConGoogle}>
+          <button className="btn ghost">{GOOGLE} Entrar con Google</button>
+        </form>
+      ) : null}
+    </div>
   );
 }

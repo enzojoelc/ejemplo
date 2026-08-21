@@ -173,7 +173,61 @@ export async function validarInvitacion(_previo: Respuesta, datos: FormData): Pr
   return { ok: "Código correcto." };
 }
 
-/** Manda a Google y vuelve al callback. No se envía ningún correo. */
+/**
+ * Alta con contraseña. Con la confirmación por correo apagada en Supabase,
+ * esto devuelve la sesión en el acto y no se envía ningún mail: es el camino
+ * que menos piezas externas necesita para una liga de quince personas.
+ */
+export async function registrarse(_previo: Respuesta, datos: FormData): Promise<Respuesta> {
+  const nombre = String(datos.get("nombre") ?? "").trim();
+  const email = String(datos.get("email") ?? "").trim();
+  const clave = String(datos.get("clave") ?? "");
+
+  if (nombre.length < 2) return { error: "Poné el nombre con el que querés aparecer en la tabla." };
+  if (clave.length < 6) return { error: "La contraseña necesita al menos 6 caracteres." };
+  if (!(await tieneInvitacion())) return { error: "Primero cargá el código de invitación." };
+
+  const supabase = await supabaseDelJugador();
+  const { data, error } = await supabase.auth.signUp({
+    email,
+    password: clave,
+    options: { data: { nombre } },
+  });
+
+  if (error) return { error: traducir(error) };
+
+  if (!data.session) {
+    return {
+      error:
+        "Supabase quedó esperando una confirmación por correo. Apagá " +
+        "«Confirm email» en Authentication → Providers → Email y probá de nuevo.",
+    };
+  }
+
+  const alta = await crearFicha(data.user!.id, nombre);
+  if (alta) return { error: alta };
+
+  redirect("/");
+}
+
+/** Ingreso de quien ya tiene cuenta. */
+export async function iniciarSesion(_previo: Respuesta, datos: FormData): Promise<Respuesta> {
+  const email = String(datos.get("email") ?? "").trim();
+  const clave = String(datos.get("clave") ?? "");
+
+  const supabase = await supabaseDelJugador();
+  const { data, error } = await supabase.auth.signInWithPassword({ email, password: clave });
+
+  if (error) return { error: traducir(error) };
+
+  // La ficha puede faltar si el alta quedó a medias: se completa al entrar.
+  const nombre = (data.user.user_metadata?.nombre as string | undefined)?.trim();
+  await crearFicha(data.user.id, nombre || email.split("@")[0] || "Jugador");
+
+  redirect("/");
+}
+
+/** Manda a Google. Sólo se ofrece si está configurado. */
 export async function entrarConGoogle(): Promise<void> {
   const supabase = await supabaseDelJugador();
   const { data, error } = await supabase.auth.signInWithOAuth({
@@ -188,6 +242,51 @@ export async function entrarConGoogle(): Promise<void> {
 
   // El tipado de rutas cubre las internas; ésta es la de Google, que es externa.
   redirect(data.url as Route);
+}
+
+async function tieneInvitacion(): Promise<boolean> {
+  const galleta = await cookies();
+  return Boolean(
+    process.env.CODIGO_INVITACION &&
+      galleta.get("invitacion")?.value === process.env.CODIGO_INVITACION,
+  );
+}
+
+/** La ficha del jugador es lo que lo hace existir para el juego. */
+async function crearFicha(id: string, nombre: string): Promise<string | null> {
+  const servidor = supabaseDelServidor();
+  const { error } = await servidor
+    .from("jugadores")
+    .upsert({ id, nombre: nombre.slice(0, 24) }, { onConflict: "id", ignoreDuplicates: true });
+  return error ? "Entraste, pero no se pudo crear tu ficha de jugador." : null;
+}
+
+function traducir(error: { message?: string; code?: string }): string {
+  const texto = (error.message ?? "").toLowerCase();
+  const codigo = error.code ?? "";
+
+  if (codigo === "email_not_confirmed" || texto.includes("not confirmed")) {
+    return (
+      "Supabase pide confirmar el correo. Apagá «Confirm email» en " +
+      "Authentication → Providers → Email."
+    );
+  }
+  if (codigo === "invalid_credentials" || texto.includes("invalid login")) {
+    return "Correo o contraseña incorrectos.";
+  }
+  if (codigo === "user_already_exists" || texto.includes("already registered")) {
+    return "Ese correo ya tiene cuenta. Entrá con tu contraseña.";
+  }
+  if (codigo === "weak_password" || texto.includes("password")) {
+    return "Esa contraseña es muy débil: probá con una más larga.";
+  }
+  if (codigo === "email_address_invalid" || texto.includes("invalid")) {
+    return "Ese correo no es válido.";
+  }
+  if (texto.includes("rate limit")) {
+    return "Demasiados intentos seguidos. Esperá un minuto.";
+  }
+  return error.message ?? "No se pudo completar el ingreso.";
 }
 
 export async function salir() {
