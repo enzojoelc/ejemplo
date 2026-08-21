@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { supabaseDelJugador, supabaseDelServidor } from "@/lib/supabase.ts";
 import { exigirJugador } from "@/lib/sesion.ts";
 import { ahora, hoy } from "@/lib/ahora.ts";
+import { urlDelSitio } from "@/lib/url.ts";
 import { aHoraSql, aDominio } from "@/datos/consultas.ts";
 import { estaEnRango } from "@/dominio/horario.ts";
 import { aplicar, ReglaViolada, validarPrediccion, type Accion, type Ronda } from "@/dominio/ronda.ts";
@@ -154,7 +155,7 @@ export async function pedirAcceso(_previo: Respuesta, datos: FormData): Promise<
     email,
     options: {
       data: { nombre },
-      emailRedirectTo: `${process.env.NEXT_PUBLIC_SITIO ?? ""}/auth/callback`,
+      emailRedirectTo: `${await urlDelSitio()}/auth/callback`,
     },
   });
 

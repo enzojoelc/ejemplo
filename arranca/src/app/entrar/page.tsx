@@ -2,11 +2,17 @@ import { redirect } from "next/navigation";
 import { jugadorActual } from "@/lib/sesion.ts";
 import { FormularioAcceso } from "@/componentes/FormularioAcceso.tsx";
 import { BotonTema } from "@/componentes/Tema.tsx";
+import { RescateSesion } from "@/componentes/RescateSesion.tsx";
 
 export const dynamic = "force-dynamic";
 
-export default async function Entrar() {
+export default async function Entrar({
+  searchParams,
+}: {
+  searchParams: Promise<{ fallo?: string }>;
+}) {
   if (await jugadorActual()) redirect("/");
+  const { fallo } = await searchParams;
 
   return (
     <div className="app">
@@ -22,6 +28,15 @@ export default async function Entrar() {
       </header>
 
       <main className="cuerpo">
+        <RescateSesion />
+
+        {fallo ? (
+          <div className="aviso mal">
+            <span className="k">No pudimos abrir la sesión</span>
+            <p className="cita">{explicar(fallo)}</p>
+          </div>
+        ) : null}
+
         <div className="caja">
           <div className="cab azul">
             <span>Entrar</span>
@@ -42,4 +57,15 @@ export default async function Entrar() {
       </main>
     </div>
   );
+}
+
+function explicar(fallo: string): string {
+  switch (fallo) {
+    case "vencido":
+      return "El link del correo ya venció. Pedí uno nuevo: duran una hora.";
+    case "usado":
+      return "Ese link ya se usó. Pedí uno nuevo.";
+    default:
+      return "Probá pedir un link nuevo. Si vuelve a fallar, avisá.";
+  }
 }
