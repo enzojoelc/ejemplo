@@ -99,14 +99,17 @@ Cargá las variables de `.env.example`:
 | `SUPABASE_SERVICE_ROLE_KEY` | idem — **nunca** en el navegador |
 | `NEXT_PUBLIC_SITIO` | la URL de la app (respaldo: normalmente se deduce sola) |
 | `CODIGO_INVITACION` | lo elegís vos |
+| `ADMIN_EMAIL` | tu correo: te hace admin al entrar, sin SQL |
 | `RESEND_API_KEY`, `MAIL_DESDE` | opcionales: sin esto no sale el recordatorio |
 | `CRON_SECRET` | protege el endpoint del recordatorio |
 
-**3. Primer ingreso.** Entrá con tu mail y el código. Después, en Supabase,
-marcate como admin:
+**3. Primer ingreso.** Entrá con el código y creá tu cuenta. Si cargaste
+`ADMIN_EMAIL` con tu correo, quedás como admin en el momento. Si preferís
+hacerlo a mano:
 
 ```sql
-update jugadores set es_admin = true where id = (select id from auth.users where email = 'tu@mail.com');
+update jugadores set es_admin = true
+where id = (select id from auth.users where email = 'tu@mail.com');
 ```
 
 **4. Calendario.** En `/admin`, pegá el texto de la resolución del ciclo lectivo

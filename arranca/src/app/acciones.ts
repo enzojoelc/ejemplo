@@ -203,7 +203,7 @@ export async function registrarse(_previo: Respuesta, datos: FormData): Promise<
     };
   }
 
-  const alta = await crearFicha(data.user!.id, nombre);
+  const alta = await asegurarFicha(data.user!.id, nombre, data.user!.email);
   if (alta) return { error: alta };
 
   redirect("/");
@@ -221,7 +221,7 @@ export async function iniciarSesion(_previo: Respuesta, datos: FormData): Promis
 
   // La ficha puede faltar si el alta quedó a medias: se completa al entrar.
   const nombre = (data.user.user_metadata?.nombre as string | undefined)?.trim();
-  await crearFicha(data.user.id, nombre || email.split("@")[0] || "Jugador");
+  await asegurarFicha(data.user.id, nombre || email.split("@")[0] || "Jugador", data.user.email);
 
   redirect("/");
 }
@@ -234,13 +234,40 @@ async function tieneInvitacion(): Promise<boolean> {
   );
 }
 
-/** La ficha del jugador es lo que lo hace existir para el juego. */
-async function crearFicha(id: string, nombre: string): Promise<string | null> {
+/**
+ * La ficha del jugador es lo que lo hace existir para el juego.
+ *
+ * También resuelve quién es admin, comparando contra ADMIN_EMAIL. Marcarlo a
+ * mano con una consulta SQL es frágil: la consulta apunta a una cuenta, y si
+ * esa cuenta se rehace —cosa que pasa mientras se prueba el ingreso— el
+ * permiso queda apuntando a un usuario que ya no se usa, sin ningún aviso.
+ */
+async function asegurarFicha(
+  id: string,
+  nombre: string,
+  email: string | undefined,
+): Promise<string | null> {
   const servidor = supabaseDelServidor();
-  const { error } = await servidor
+  const admin = process.env.ADMIN_EMAIL?.trim().toLowerCase();
+  const esAdmin = Boolean(admin) && email?.trim().toLowerCase() === admin;
+
+  const { data: ficha } = await servidor
     .from("jugadores")
-    .upsert({ id, nombre: nombre.slice(0, 24) }, { onConflict: "id", ignoreDuplicates: true });
-  return error ? "Entraste, pero no se pudo crear tu ficha de jugador." : null;
+    .select("id, es_admin")
+    .eq("id", id)
+    .maybeSingle();
+
+  if (!ficha) {
+    const { error } = await servidor
+      .from("jugadores")
+      .insert({ id, nombre: nombre.slice(0, 24), es_admin: esAdmin });
+    return error ? "Entraste, pero no se pudo crear tu ficha de jugador." : null;
+  }
+
+  if (esAdmin && !ficha.es_admin) {
+    await servidor.from("jugadores").update({ es_admin: true }).eq("id", id);
+  }
+  return null;
 }
 
 function traducir(error: { message?: string; code?: string }): string {
