@@ -1,3 +1,4 @@
+import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { jugadorActual } from "@/lib/sesion.ts";
 import { FormularioAcceso } from "@/componentes/FormularioAcceso.tsx";
@@ -9,10 +10,12 @@ export const dynamic = "force-dynamic";
 export default async function Entrar({
   searchParams,
 }: {
-  searchParams: Promise<{ fallo?: string; via?: string; detalle?: string }>;
+  searchParams: Promise<{ fallo?: string; detalle?: string }>;
 }) {
   if (await jugadorActual()) redirect("/");
-  const { fallo, via, detalle } = await searchParams;
+
+  const { fallo, detalle } = await searchParams;
+  const invitado = (await cookies()).get("invitacion")?.value === process.env.CODIGO_INVITACION;
 
   return (
     <div className="app">
@@ -34,7 +37,7 @@ export default async function Entrar({
           <div className="aviso mal">
             <span className="k">No pudimos abrir la sesión</span>
             <p className="cita">{explicar(fallo)}</p>
-            {detalle || via ? (
+            {detalle ? (
               <p
                 style={{
                   fontFamily: "var(--mono)",
@@ -44,8 +47,7 @@ export default async function Entrar({
                   wordBreak: "break-word",
                 }}
               >
-                {via ? `via=${via}` : null}
-                {detalle ? ` · ${detalle}` : null}
+                {detalle}
               </p>
             ) : null}
           </div>
@@ -53,20 +55,21 @@ export default async function Entrar({
 
         <div className="caja">
           <div className="cab azul">
-            <span>Entrar</span>
+            <span>{invitado ? "Entrar" : "Paso 1 de 2"}</span>
           </div>
           <div className="interior">
             <p className="p">
               La clase es lunes y jueves de 18:20 a 20:35, y nunca arranca 18:20. El juego consiste en
               adivinar cuándo arranca de verdad.
             </p>
-            <FormularioAcceso />
+            <FormularioAcceso invitado={invitado} />
           </div>
         </div>
 
         <p className="p" style={{ fontSize: 12 }}>
-          Sin contraseñas: te llega un link por mail y listo. Hace falta el código de invitación que
-          circula entre los que cursan.
+          {invitado
+            ? "Sin contraseñas y sin correos: entrás con tu cuenta de Google."
+            : "Hace falta el código que circula entre los que cursan. Después entrás con Google, sin contraseñas."}
         </p>
       </main>
     </div>
@@ -75,15 +78,17 @@ export default async function Entrar({
 
 function explicar(fallo: string): string {
   switch (fallo) {
-    case "vencido":
-      return "El link del correo ya venció. Pedí uno nuevo: duran una hora.";
-    case "usado":
-      return "Ese link ya se usó. Pedí uno nuevo.";
-    case "otro_navegador":
-      return "Pediste el link en un navegador y lo abriste en otro. Pedí uno nuevo y abrilo en el mismo.";
-    case "sin_datos":
-      return "El link llegó sin datos de acceso. Suele ser la plantilla del correo: tiene que usar el link de confirmación estándar de Supabase.";
+    case "sin_invitacion":
+      return "Tu cuenta de Google anduvo, pero no tenés invitación. Cargá el código y volvé a entrar.";
+    case "google_no_configurado":
+      return "Falta habilitar el acceso con Google en Supabase: Authentication → Providers → Google.";
+    case "google":
+      return "Google canceló el acceso. Probá de nuevo.";
+    case "sesion":
+      return "No se pudo abrir la sesión con lo que devolvió Google.";
+    case "alta":
+      return "Entraste, pero no se pudo crear tu ficha de jugador.";
     default:
-      return "Probá pedir un link nuevo. Si vuelve a fallar, avisá.";
+      return "Probá de nuevo. Si vuelve a fallar, avisá.";
   }
 }

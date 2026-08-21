@@ -72,10 +72,25 @@ npm run dev
 Todo entra en las capas gratuitas: son quince jugadores y 54 rondas al año.
 
 **1. Supabase.** Creá un proyecto y corré `supabase/schema.sql` en el SQL Editor.
-En *Authentication → Providers* dejá habilitado el acceso por mail (link mágico),
-y en *URL Configuration* agregá `https://TU-APP.vercel.app/auth/callback` como
-redirect. El plan gratuito pausa proyectos con 7 días de inactividad: jugando
-lunes y jueves nunca se pausa.
+En *Authentication → Providers* habilitá **Google** y pegá el ID y el secreto
+del cliente OAuth (ver abajo). En *URL Configuration* poné la URL de la app
+como Site URL y agregá `https://TU-APP.vercel.app/auth/callback` a las Redirect
+URLs. El plan gratuito pausa proyectos con 7 días de inactividad: jugando lunes
+y jueves nunca se pausa.
+
+**1b. Google.** En console.cloud.google.com creá un proyecto, configurá la
+pantalla de consentimiento (externa, con tu correo de contacto) y creá unas
+credenciales de tipo *ID de cliente de OAuth → Aplicación web*. El único dato
+fino es el **URI de redireccionamiento autorizado**, que es el de Supabase y no
+el de la app:
+
+```
+https://TU-PROYECTO.supabase.co/auth/v1/callback
+```
+
+Se entra con Google a propósito: sin correos no hay links que venzan, ni
+límites de envío por hora, ni un dominio propio que verificar para poder
+mandarle un mail a quince personas.
 
 **2. Vercel.** Importá este repositorio, con `arranca` como directorio raíz.
 Cargá las variables de `.env.example`:
@@ -85,7 +100,7 @@ Cargá las variables de `.env.example`:
 | `NEXT_PUBLIC_SUPABASE_URL` | Supabase → Project Settings → API |
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | idem |
 | `SUPABASE_SERVICE_ROLE_KEY` | idem — **nunca** en el navegador |
-| `NEXT_PUBLIC_SITIO` | la URL de la app, para los links del mail |
+| `NEXT_PUBLIC_SITIO` | la URL de la app (respaldo: normalmente se deduce sola) |
 | `CODIGO_INVITACION` | lo elegís vos |
 | `RESEND_API_KEY`, `MAIL_DESDE` | opcionales: sin esto no sale el recordatorio |
 | `CRON_SECRET` | protege el endpoint del recordatorio |
@@ -113,5 +128,7 @@ El recordatorio de las 17:00 queda programado por `vercel.json` a las 20:00 UTC.
   feriados con traslado posible. Hoy se cargan a mano.
 - **Modo simulación** completo: el reloj ya es inyectable (`HORA_SIMULADA`) y
   las rondas tienen su marca, falta la pantalla que lo maneje.
+- **Recordatorio por correo** de las 17:00: es el único mail que manda la app
+  y necesita una cuenta de Resend con dominio verificado.
 - **Estadísticas de fase 2**: cuánto tarda el docente en promedio, rachas,
   apodos según el sesgo.

@@ -2,6 +2,8 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { cookies } from "next/headers";
+import type { Route } from "next";
 import { supabaseDelJugador, supabaseDelServidor } from "@/lib/supabase.ts";
 import { exigirJugador } from "@/lib/sesion.ts";
 import { ahora, hoy } from "@/lib/ahora.ts";
@@ -140,58 +142,52 @@ function mensaje(e: unknown): string {
 
 /* ------------------------------------------------------------------ acceso */
 
-export async function pedirAcceso(_previo: Respuesta, datos: FormData): Promise<Respuesta> {
-  const email = String(datos.get("email") ?? "").trim();
-  const nombre = String(datos.get("nombre") ?? "").trim();
+/**
+ * La liga es cerrada: para entrar hay que saber el código que circula entre
+ * los que cursan. Se valida acá y queda en una cookie del propio navegador,
+ * que el callback vuelve a verificar antes de crear la ficha del jugador.
+ *
+ * La cookie guarda el código, no un "ya validé": así, falsificarla exige
+ * conocer el código igual, que es exactamente la barrera que queremos.
+ */
+export async function validarInvitacion(_previo: Respuesta, datos: FormData): Promise<Respuesta> {
   const codigo = String(datos.get("codigo") ?? "").trim();
 
-  if (codigo !== process.env.CODIGO_INVITACION) {
-    return { error: "El código de invitación no es correcto." };
+  if (!process.env.CODIGO_INVITACION) {
+    return { error: "Falta configurar el código de invitación en el servidor." };
   }
-  if (nombre.length < 2) return { error: "Poné un nombre para la tabla." };
+  if (codigo !== process.env.CODIGO_INVITACION) {
+    return { error: "Ese código no es el correcto." };
+  }
 
+  const galleta = await cookies();
+  galleta.set("invitacion", codigo, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "lax",
+    maxAge: 60 * 30,
+    path: "/",
+  });
+
+  revalidatePath("/entrar");
+  return { ok: "Código correcto." };
+}
+
+/** Manda a Google y vuelve al callback. No se envía ningún correo. */
+export async function entrarConGoogle(): Promise<void> {
   const supabase = await supabaseDelJugador();
-  const { error } = await supabase.auth.signInWithOtp({
-    email,
+  const { data, error } = await supabase.auth.signInWithOAuth({
+    provider: "google",
     options: {
-      data: { nombre },
-      emailRedirectTo: `${await urlDelSitio()}/auth/callback`,
+      redirectTo: `${await urlDelSitio()}/auth/callback`,
+      queryParams: { prompt: "select_account" },
     },
   });
 
-  if (error) return { error: porQueNoSalioElMail(error) };
-  return { ok: `Te mandamos un link a ${email}. Abrilo desde este dispositivo.` };
-}
+  if (error || !data.url) redirect("/entrar?fallo=google_no_configurado");
 
-/**
- * Traduce el fallo de envío a algo accionable.
- *
- * El correo interno de Supabase existe para probar, no para usar: manda unos
- * pocos mensajes por hora. Con quince jugadores dándose de alta la misma
- * tarde, el límite se toca enseguida, y un "revisá la dirección" manda a
- * buscar el problema al lado equivocado.
- */
-function porQueNoSalioElMail(error: { message?: string; code?: string }): string {
-  const codigo = error.code ?? "";
-  const texto = (error.message ?? "").toLowerCase();
-
-  if (codigo === "over_email_send_rate_limit" || texto.includes("rate limit")) {
-    return (
-      "Supabase no deja mandar más mails por ahora: su servicio interno tiene un " +
-      "límite de pocos envíos por hora. Esperá un rato, o configurá un proveedor " +
-      "de correo propio en Authentication → SMTP Settings."
-    );
-  }
-  if (codigo === "email_address_invalid" || texto.includes("invalid")) {
-    return "Esa dirección de correo no es válida.";
-  }
-  if (codigo === "signup_disabled" || texto.includes("signups not allowed")) {
-    return "Supabase tiene las altas deshabilitadas. Habilitalas en Authentication → Providers → Email.";
-  }
-  if (texto.includes("smtp") || texto.includes("sending")) {
-    return `El servidor de correo rechazó el envío: ${error.message}`;
-  }
-  return `No se pudo enviar el mail: ${error.message ?? "sin detalle"}`;
+  // El tipado de rutas cubre las internas; ésta es la de Google, que es externa.
+  redirect(data.url as Route);
 }
 
 export async function salir() {
@@ -199,7 +195,6 @@ export async function salir() {
   await supabase.auth.signOut();
   redirect("/entrar");
 }
-
 
 /* ------------------------------------------------------------------- admin */
 

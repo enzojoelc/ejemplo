@@ -1,63 +1,72 @@
 import { NextResponse } from "next/server";
-import type { EmailOtpType } from "@supabase/supabase-js";
+import { cookies } from "next/headers";
 import { supabaseDelJugador, supabaseDelServidor } from "@/lib/supabase.ts";
 
 /**
- * Vuelta del link del correo. Además de abrir la sesión, crea la ficha del
- * jugador la primera vez: el nombre viaja en los metadatos del alta.
- *
- * Acepta las dos formas en que Supabase puede devolver al usuario —el código
- * de intercambio y el token del correo— porque cuál de las dos llega depende
- * de la plantilla del mail, que se edita desde el panel y no desde acá.
+ * Vuelta de Google. Abre la sesión y, la primera vez, crea la ficha del
+ * jugador: ahí es donde se exige el código de invitación, no antes. Tener
+ * cuenta de Google no alcanza para entrar a la liga.
  */
 export async function GET(request: Request) {
   const url = new URL(request.url);
   const code = url.searchParams.get("code");
-  const tokenHash = url.searchParams.get("token_hash");
-  const tipo = url.searchParams.get("type") as EmailOtpType | null;
+  const errorDeGoogle = url.searchParams.get("error_description") ?? url.searchParams.get("error");
 
-  // Supabase también puede devolver el error directamente en la dirección.
-  const errorDeSupabase =
-    url.searchParams.get("error_description") ?? url.searchParams.get("error");
+  if (errorDeGoogle || !code) {
+    return NextResponse.redirect(fallo(url.origin, "google", errorDeGoogle));
+  }
 
   const supabase = await supabaseDelJugador();
-
-  const { data, error } = errorDeSupabase
-    ? { data: { user: null }, error: new Error(errorDeSupabase) }
-    : code
-      ? await supabase.auth.exchangeCodeForSession(code)
-      : tokenHash
-        ? await supabase.auth.verifyOtp({ token_hash: tokenHash, type: tipo ?? "magiclink" })
-        : { data: { user: null }, error: null };
+  const { data, error } = await supabase.auth.exchangeCodeForSession(code);
 
   if (error || !data.user) {
-    // El detalle viaja en la dirección para que el jugador pueda leerlo y
-    // pasarlo: sin esto, todos los fallos distintos se ven exactamente igual.
-    const destino = new URL("/entrar", url.origin);
-    destino.searchParams.set("fallo", motivo(error, code, tokenHash));
-    destino.searchParams.set("via", code ? "codigo" : tokenHash ? "token" : "nada");
-    if (error?.message) destino.searchParams.set("detalle", error.message.slice(0, 160));
-    return NextResponse.redirect(destino);
+    return NextResponse.redirect(fallo(url.origin, "sesion", error?.message ?? null));
   }
 
   const servidor = supabaseDelServidor();
-  const nombre = (data.user.user_metadata?.nombre as string | undefined)?.trim();
-  await servidor
+  const { data: yaEsta } = await servidor
     .from("jugadores")
-    .upsert(
-      { id: data.user.id, nombre: nombre || data.user.email?.split("@")[0] || "Jugador" },
-      { onConflict: "id", ignoreDuplicates: true },
-    );
+    .select("id")
+    .eq("id", data.user.id)
+    .maybeSingle();
+
+  if (!yaEsta) {
+    const galleta = await cookies();
+    const invitacion = galleta.get("invitacion")?.value;
+
+    if (!invitacion || invitacion !== process.env.CODIGO_INVITACION) {
+      // Entró a Google pero no tiene invitación: se cierra la sesión para que
+      // no quede a medio camino, con cuenta pero sin ficha.
+      await supabase.auth.signOut();
+      return NextResponse.redirect(fallo(url.origin, "sin_invitacion", null));
+    }
+
+    const { error: alta } = await servidor.from("jugadores").insert({
+      id: data.user.id,
+      nombre: nombreDe(data.user.user_metadata, data.user.email),
+    });
+
+    if (alta) return NextResponse.redirect(fallo(url.origin, "alta", alta.message));
+    galleta.delete("invitacion");
+  }
 
   return NextResponse.redirect(new URL("/", url.origin));
 }
 
-function motivo(error: unknown, code: string | null, tokenHash: string | null): string {
-  if (!error && !code && !tokenHash) return "sin_datos";
+/** El nombre sale del perfil de Google: es el que van a ver los demás en la tabla. */
+function nombreDe(metadatos: Record<string, unknown>, email: string | undefined): string {
+  const completo =
+    (metadatos.full_name as string | undefined) ??
+    (metadatos.name as string | undefined) ??
+    (metadatos.given_name as string | undefined);
 
-  const texto = error instanceof Error ? error.message.toLowerCase() : "";
-  if (texto.includes("expired")) return "vencido";
-  if (texto.includes("code verifier") || texto.includes("code challenge")) return "otro_navegador";
-  if (texto.includes("invalid") || texto.includes("used")) return "usado";
-  return "desconocido";
+  const primero = completo?.trim().split(/\s+/)[0];
+  return (primero || email?.split("@")[0] || "Jugador").slice(0, 24);
+}
+
+function fallo(origen: string, motivo: string, detalle: string | null): URL {
+  const destino = new URL("/entrar", origen);
+  destino.searchParams.set("fallo", motivo);
+  if (detalle) destino.searchParams.set("detalle", detalle.slice(0, 160));
+  return destino;
 }
