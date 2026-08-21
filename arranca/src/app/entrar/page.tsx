@@ -9,10 +9,10 @@ export const dynamic = "force-dynamic";
 export default async function Entrar({
   searchParams,
 }: {
-  searchParams: Promise<{ fallo?: string }>;
+  searchParams: Promise<{ fallo?: string; via?: string; detalle?: string }>;
 }) {
   if (await jugadorActual()) redirect("/");
-  const { fallo } = await searchParams;
+  const { fallo, via, detalle } = await searchParams;
 
   return (
     <div className="app">
@@ -34,6 +34,20 @@ export default async function Entrar({
           <div className="aviso mal">
             <span className="k">No pudimos abrir la sesión</span>
             <p className="cita">{explicar(fallo)}</p>
+            {detalle || via ? (
+              <p
+                style={{
+                  fontFamily: "var(--mono)",
+                  fontSize: 11,
+                  color: "var(--mute)",
+                  margin: 0,
+                  wordBreak: "break-word",
+                }}
+              >
+                {via ? `via=${via}` : null}
+                {detalle ? ` · ${detalle}` : null}
+              </p>
+            ) : null}
           </div>
         ) : null}
 
@@ -65,6 +79,10 @@ function explicar(fallo: string): string {
       return "El link del correo ya venció. Pedí uno nuevo: duran una hora.";
     case "usado":
       return "Ese link ya se usó. Pedí uno nuevo.";
+    case "otro_navegador":
+      return "Pediste el link en un navegador y lo abriste en otro. Pedí uno nuevo y abrilo en el mismo.";
+    case "sin_datos":
+      return "El link llegó sin datos de acceso. Suele ser la plantilla del correo: tiene que usar el link de confirmación estándar de Supabase.";
     default:
       return "Probá pedir un link nuevo. Si vuelve a fallar, avisá.";
   }

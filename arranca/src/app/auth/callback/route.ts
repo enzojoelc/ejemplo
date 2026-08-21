@@ -16,16 +16,28 @@ export async function GET(request: Request) {
   const tokenHash = url.searchParams.get("token_hash");
   const tipo = url.searchParams.get("type") as EmailOtpType | null;
 
+  // Supabase también puede devolver el error directamente en la dirección.
+  const errorDeSupabase =
+    url.searchParams.get("error_description") ?? url.searchParams.get("error");
+
   const supabase = await supabaseDelJugador();
 
-  const { data, error } = code
-    ? await supabase.auth.exchangeCodeForSession(code)
-    : tokenHash
-      ? await supabase.auth.verifyOtp({ token_hash: tokenHash, type: tipo ?? "magiclink" })
-      : { data: { user: null }, error: new Error("El link no trae ningún dato de acceso.") };
+  const { data, error } = errorDeSupabase
+    ? { data: { user: null }, error: new Error(errorDeSupabase) }
+    : code
+      ? await supabase.auth.exchangeCodeForSession(code)
+      : tokenHash
+        ? await supabase.auth.verifyOtp({ token_hash: tokenHash, type: tipo ?? "magiclink" })
+        : { data: { user: null }, error: null };
 
   if (error || !data.user) {
-    return NextResponse.redirect(new URL(`/entrar?fallo=${motivo(error)}`, url.origin));
+    // El detalle viaja en la dirección para que el jugador pueda leerlo y
+    // pasarlo: sin esto, todos los fallos distintos se ven exactamente igual.
+    const destino = new URL("/entrar", url.origin);
+    destino.searchParams.set("fallo", motivo(error, code, tokenHash));
+    destino.searchParams.set("via", code ? "codigo" : tokenHash ? "token" : "nada");
+    if (error?.message) destino.searchParams.set("detalle", error.message.slice(0, 160));
+    return NextResponse.redirect(destino);
   }
 
   const servidor = supabaseDelServidor();
@@ -40,10 +52,12 @@ export async function GET(request: Request) {
   return NextResponse.redirect(new URL("/", url.origin));
 }
 
-/** Un motivo corto en la URL: sin esto, un link vencido y uno mal configurado se ven igual. */
-function motivo(error: unknown): string {
+function motivo(error: unknown, code: string | null, tokenHash: string | null): string {
+  if (!error && !code && !tokenHash) return "sin_datos";
+
   const texto = error instanceof Error ? error.message.toLowerCase() : "";
   if (texto.includes("expired")) return "vencido";
+  if (texto.includes("code verifier") || texto.includes("code challenge")) return "otro_navegador";
   if (texto.includes("invalid") || texto.includes("used")) return "usado";
   return "desconocido";
 }
