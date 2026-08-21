@@ -59,10 +59,59 @@ puentes los declara el Poder Ejecutivo después— y es la razón por la que el
 calendario se arma con tres fuentes: la resolución, el calendario nacional y el
 admin.
 
+## Poner a andar
+
+```bash
+npm install
+npm test          # 42 tests de las reglas del juego, sin base de datos
+npm run dev
+```
+
+## Desplegar
+
+Todo entra en las capas gratuitas: son quince jugadores y 54 rondas al año.
+
+**1. Supabase.** Creá un proyecto y corré `supabase/schema.sql` en el SQL Editor.
+En *Authentication → Providers* dejá habilitado el acceso por mail (link mágico),
+y en *URL Configuration* agregá `https://TU-APP.vercel.app/auth/callback` como
+redirect. El plan gratuito pausa proyectos con 7 días de inactividad: jugando
+lunes y jueves nunca se pausa.
+
+**2. Vercel.** Importá este repositorio, con `arranca` como directorio raíz.
+Cargá las variables de `.env.example`:
+
+| Variable | De dónde sale |
+|---|---|
+| `NEXT_PUBLIC_SUPABASE_URL` | Supabase → Project Settings → API |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | idem |
+| `SUPABASE_SERVICE_ROLE_KEY` | idem — **nunca** en el navegador |
+| `NEXT_PUBLIC_SITIO` | la URL de la app, para los links del mail |
+| `CODIGO_INVITACION` | lo elegís vos |
+| `RESEND_API_KEY`, `MAIL_DESDE` | opcionales: sin esto no sale el recordatorio |
+| `CRON_SECRET` | protege el endpoint del recordatorio |
+
+**3. Primer ingreso.** Entrá con tu mail y el código. Después, en Supabase,
+marcate como admin:
+
+```sql
+update jugadores set es_admin = true where id = (select id from auth.users where email = 'tu@mail.com');
+```
+
+**4. Calendario.** En `/admin`, pegá el texto de la resolución del ciclo lectivo
+y los puentes turísticos (uno por línea, `2026-03-23 Puente turístico`). La
+pantalla muestra primero cuántas rondas entendió y de qué fecha a qué fecha:
+recién cuando confirmás las crea.
+
+El recordatorio de las 17:00 queda programado por `vercel.json` a las 20:00 UTC.
+
 ## Lo que sigue
 
-- Esquema de base de datos y políticas de acceso (Supabase).
-- Aplicación web (Next.js) con las pantallas ya diseñadas.
-- Extracción de texto del PDF, para cerrar el circuito de carga del calendario.
-- Recordatorio por mail a las 17:00 para quien no cargó.
-- Modo simulación.
+- **Subir el PDF** en vez de pegar el texto. La resolución 2026 tiene capa de
+  texto limpia, así que es cuestión de conectar un extractor a la pantalla que
+  ya existe.
+- **Cruce automático con el calendario nacional** para los puentes y los tres
+  feriados con traslado posible. Hoy se cargan a mano.
+- **Modo simulación** completo: el reloj ya es inyectable (`HORA_SIMULADA`) y
+  las rondas tienen su marca, falta la pantalla que lo maneje.
+- **Estadísticas de fase 2**: cuánto tarda el docente en promedio, rachas,
+  apodos según el sesgo.
