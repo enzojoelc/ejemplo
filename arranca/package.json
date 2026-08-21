@@ -1,0 +1,10 @@
+{
+  "name": "arranca",
+  "version": "0.1.0",
+  "private": true,
+  "description": "¿A qué hora arranca? — juego de predicción del horario de inicio de clase",
+  "type": "module",
+  "scripts": {
+    "test": "node --experimental-strip-types --test src/dominio/*.test.ts"
+  }
+}
