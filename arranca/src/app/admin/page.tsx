@@ -1,10 +1,10 @@
 import { redirect } from "next/navigation";
 import { exigirJugador } from "@/lib/sesion.ts";
-import { rondaDeHoy } from "@/datos/consultas.ts";
+import { rondaDeHoy, hayTemporada } from "@/datos/consultas.ts";
 import { fechaLarga, hoy } from "@/lib/ahora.ts";
 import { Encabezado } from "@/componentes/Encabezado.tsx";
 import { Navegacion } from "@/componentes/Navegacion.tsx";
-import { ImportarCalendario } from "@/componentes/ImportarCalendario.tsx";
+import { CrearTemporada } from "@/componentes/ImportarCalendario.tsx";
 import { BotonAccion, CargarHorario } from "@/componentes/AccionRonda.tsx";
 import { horarioReal } from "@/dominio/ronda.ts";
 
@@ -14,7 +14,7 @@ export default async function Admin() {
   const jugador = await exigirJugador();
   if (!jugador.esAdmin) redirect("/");
 
-  const datos = await rondaDeHoy(jugador.id);
+  const [datos, temporada] = await Promise.all([rondaDeHoy(jugador.id), hayTemporada()]);
   const real = datos ? horarioReal(datos.ronda) : null;
 
   return (
@@ -23,10 +23,10 @@ export default async function Admin() {
       <main className="cuerpo">
         <div className="caja">
           <div className="cab inv">
-            <span>Calendario del ciclo lectivo</span>
+            <span>Temporada {temporada ? "· creada" : "· falta crearla"}</span>
           </div>
           <div className="interior">
-            <ImportarCalendario />
+            <CrearTemporada yaExiste={temporada} />
           </div>
         </div>
 

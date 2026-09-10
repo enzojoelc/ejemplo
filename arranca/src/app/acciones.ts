@@ -319,68 +319,43 @@ export async function salir() {
 /* ------------------------------------------------------------------- admin */
 
 /**
- * Carga el calendario del ciclo lectivo desde el texto de la resolución y crea
- * todas las rondas del año de una vez.
+ * Crea la temporada completa: las 54 rondas del ciclo y los días que no se
+ * juegan, ya calculados desde la resolución.
  *
- * Muestra primero lo que entendió: si algún año la resolución cambia de
- * formato y la extracción sale torcida, el torneo arrancaría con las fechas
- * mal y nadie se daría cuenta hasta mayo.
+ * Es un botón y no un formulario a propósito: pegar el texto de un PDF a mano
+ * es el paso donde algo se corta, se pega de más, o entra un año equivocado, y
+ * nadie se entera hasta que falta una ronda en mayo.
  */
-export async function importarCalendario(_previo: Respuesta, datos: FormData): Promise<Respuesta> {
+export async function crearTemporada(): Promise<Respuesta> {
   const jugador = await exigirJugador();
-  if (!jugador.esAdmin) return { error: "Sólo el admin puede cargar el calendario." };
+  if (!jugador.esAdmin) return { error: "Sólo el admin puede crear la temporada." };
 
-  const { leerCalendario } = await import("@/dominio/resolucion.ts");
-  const { armarTemporada } = await import("@/dominio/calendario.ts");
-
-  let temporada;
-  try {
-    const calendario = leerCalendario(String(datos.get("resolucion") ?? ""));
-    temporada = armarTemporada(calendario, leerPuentes(String(datos.get("puentes") ?? "")));
-    if (String(datos.get("confirmado")) !== "si") {
-      return {
-        ok:
-          `Entendí ${temporada.rondas.length} rondas, del ${temporada.rondas[0]?.fecha} al ` +
-          `${temporada.cierre}. Revisá y confirmá para crearlas.`,
-      };
-    }
-  } catch (e) {
-    return { error: `No se pudo leer la resolución: ${mensaje(e)}` };
-  }
-
+  const { ANIO, FECHAS, SIN_CLASE } = await import("@/datos/temporada-2026.ts");
   const servidor = supabaseDelServidor();
-  const { data: fila, error: errorTemporada } = await servidor
+
+  const { data: temporada, error: errorTemporada } = await servidor
     .from("temporadas")
-    .upsert({ anio: temporada.anio }, { onConflict: "anio" })
+    .upsert({ anio: ANIO }, { onConflict: "anio" })
     .select("id")
     .single();
 
-  if (errorTemporada || !fila) return { error: "No se pudo crear la temporada." };
+  if (errorTemporada || !temporada) {
+    return { error: `No se pudo crear la temporada: ${errorTemporada?.message ?? "sin detalle"}` };
+  }
 
-  const { error } = await servidor.from("rondas").upsert(
-    temporada.rondas.map((r) => ({ temporada_id: fila.id, fecha: r.fecha })),
+  const { error: errorDias } = await servidor.from("dias_sin_clase").upsert(
+    SIN_CLASE.map((d) => ({ temporada_id: temporada.id, ...d })),
+    { onConflict: "temporada_id,fecha" },
+  );
+  if (errorDias) return { error: `No se pudieron guardar los días sin clase: ${errorDias.message}` };
+
+  const { error: errorRondas } = await servidor.from("rondas").upsert(
+    FECHAS.map((fecha) => ({ temporada_id: temporada.id, fecha })),
     { onConflict: "temporada_id,fecha", ignoreDuplicates: true },
   );
-
-  if (error) return { error: "No se pudieron crear las rondas." };
+  if (errorRondas) return { error: `No se pudieron crear las rondas: ${errorRondas.message}` };
 
   revalidatePath("/");
-  return { ok: `Listo: ${temporada.rondas.length} rondas creadas para ${temporada.anio}.` };
-}
-
-/** Los puentes se pegan como "2026-03-23 Puente turístico", uno por línea. */
-function leerPuentes(texto: string) {
-  return texto
-    .split("\n")
-    .map((linea) => linea.trim())
-    .filter(Boolean)
-    .map((linea) => {
-      const [fecha, ...resto] = linea.split(/\s+/);
-      return {
-        fecha: fecha!,
-        motivo: resto.join(" ") || "Puente turístico",
-        tipo: "puente" as const,
-      };
-    })
-    .filter((p) => /^\d{4}-\d{2}-\d{2}$/.test(p.fecha));
+  revalidatePath("/admin");
+  return { ok: `Listo: ${FECHAS.length} rondas creadas para ${ANIO}.` };
 }

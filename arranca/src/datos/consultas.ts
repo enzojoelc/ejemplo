@@ -230,3 +230,10 @@ export async function nombresDeJugadores(): Promise<Map<string, string>> {
   const { data } = await supabase.from("jugadores").select("id, nombre");
   return new Map((data ?? []).map((j) => [j.id as string, j.nombre as string]));
 }
+
+/** ¿Ya están creadas las rondas del año? Lo primero que hay que saber para jugar. */
+export async function hayTemporada(): Promise<boolean> {
+  const supabase = await supabaseDelJugador();
+  const { count } = await supabase.from("rondas").select("id", { count: "exact", head: true });
+  return (count ?? 0) > 0;
+}
